@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 
 	lamps "github.com/isfopo/rig-components/lamps"
 	list "github.com/isfopo/rig-components/list"
@@ -32,6 +33,7 @@ type Model struct {
 	clocks  uint64
 	dropped uint64
 	lastRaw string
+	log     []string
 	status  string
 	isErr   bool
 
@@ -158,6 +160,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.dropped = m.monitor.Dropped()
 		m.lamps.Light("in")
 		m.lastRaw = describeRaw(ev)
+		entry := ev.Received.Format("15:04:05.000") + "  " + describeRaw(ev)
+		m.log = append(m.log, entry)
+		if len(m.log) > 12 {
+			m.log = m.log[len(m.log)-12:]
+		}
 		// schedule lamp-off repaint
 		cmd := waitForEventCmd(m.monitor.Events())
 		return m, m.lamps.WithLampOff(cmd)
@@ -210,31 +217,73 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	var b strings.Builder
-	b.WriteString("rig-midimon")
+	width := m.width
+	if width < 60 {
+		width = 80
+	}
+	boxWidth := width - 4
+	if boxWidth < 40 {
+		boxWidth = 40
+	}
+
+	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("212"))
+	header := titleStyle.Render("rig-midimon")
 	if m.lamps.Names() != nil {
-		b.WriteString("  ")
-		b.WriteString(m.lamps.View())
+		header += "   " + m.lamps.View()
 	}
-	b.WriteString("\n\n")
 
+	// Ports block
+	portsBlock := "midi in ports:\n"
 	if len(m.ports) == 0 {
-		b.WriteString("no input ports\n\n")
+		portsBlock += "  (no input ports)\n"
 	} else {
-		b.WriteString("midi in ports:\n")
-		b.WriteString(m.portList.View())
-		b.WriteString("\n")
+		portsBlock += m.portList.View()
 	}
 
-	b.WriteString(fmt.Sprintf("events=%d clocks=%d dropped=%d\n", m.events, m.clocks, m.dropped))
-	if m.lastRaw != "" {
-		b.WriteString("last: " + m.lastRaw + "\n")
+	// Large display for the last received signal
+	lastSignal := m.lastRaw
+	if lastSignal == "" {
+		lastSignal = "—  waiting for input —"
 	}
-	b.WriteString("\n")
-	b.WriteString(m.status + "\n\n")
+	lastStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("42")).
+		Padding(1, 2).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("42")).
+		Width(boxWidth).
+		Align(lipgloss.Center)
+	lastBox := lastStyle.Render(lastSignal)
+
+	// Boxed log table
+	logLines := m.log
+	if len(logLines) == 0 {
+		logLines = []string{"(no events yet)"}
+	}
+	logContent := strings.Join(logLines, "\n")
+	logStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("238")).
+		Padding(0, 1).
+		Width(boxWidth)
+	logBox := logStyle.Render(logContent)
+
+	statusStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
+	status := m.status
 	if m.isErr {
-		b.WriteString("(error)\n")
+		status = lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Render(status)
 	}
+
+	counters := fmt.Sprintf("events=%d  clocks=%d  dropped=%d", m.events, m.clocks, m.dropped)
+
+	var b strings.Builder
+	b.WriteString(header + "\n\n")
+	b.WriteString(portsBlock + "\n")
+	b.WriteString(lastBox + "\n\n")
+	b.WriteString("recent log:\n")
+	b.WriteString(logBox + "\n\n")
+	b.WriteString(counters + "\n")
+	b.WriteString(statusStyle.Render(status) + "\n\n")
 	b.WriteString("up/down select  enter open/close  c close  r refresh  q quit\n")
 	return b.String()
 }
