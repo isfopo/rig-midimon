@@ -226,7 +226,7 @@ func (m Model) View() string {
 		boxWidth = 40
 	}
 
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("212"))
+	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("magenta"))
 	header := titleStyle.Render("rig-midimon")
 	if m.lamps.Names() != nil {
 		header += "   " + m.lamps.View()
@@ -247,10 +247,10 @@ func (m Model) View() string {
 	}
 	lastStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("42")).
+		Foreground(lipgloss.Color("green")).
 		Padding(1, 2).
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("42")).
+		BorderForeground(lipgloss.Color("green")).
 		Width(boxWidth).
 		Align(lipgloss.Center)
 	lastBox := lastStyle.Render(lastSignal)
@@ -263,15 +263,15 @@ func (m Model) View() string {
 	logContent := strings.Join(logLines, "\n")
 	logStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("238")).
+		BorderForeground(lipgloss.Color("bright black")).
 		Padding(0, 1).
 		Width(boxWidth)
 	logBox := logStyle.Render(logContent)
 
-	statusStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
+	statusStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("bright black"))
 	status := m.status
 	if m.isErr {
-		status = lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Render(status)
+		status = lipgloss.NewStyle().Foreground(lipgloss.Color("red")).Render(status)
 	}
 
 	counters := fmt.Sprintf("events=%d  clocks=%d  dropped=%d", m.events, m.clocks, m.dropped)
