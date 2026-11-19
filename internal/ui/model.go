@@ -227,10 +227,16 @@ func (m Model) View() string {
 	}
 
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("magenta"))
-	header := titleStyle.Render("rig-midimon")
+	title := titleStyle.Render("rig-midimon")
+	lampsView := ""
 	if m.lamps.Names() != nil {
-		header += "   " + m.lamps.View()
+		lampsView = m.lamps.View()
 	}
+	gap := width - lipgloss.Width(title) - lipgloss.Width(lampsView) - 4
+	if gap < 1 {
+		gap = 1
+	}
+	header := title + strings.Repeat(" ", gap) + lampsView
 
 	// Ports block
 	portsBlock := "midi in ports:\n"
