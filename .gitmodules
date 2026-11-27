@@ -1,9 +1,9 @@
 [submodule "core"]
 	path = core
-	url = /home/isaac/Projects/rig/rig-core
+	url = https://github.com/isfopo/rig-core.git
 [submodule "components"]
 	path = components
-	url = /home/isaac/Projects/rig/rig-components
+	url = https://github.com/isfopo/rig-components.git
 [submodule "meta"]
 	path = meta
-	url = /home/isaac/Projects/rig/rig-meta
+	url = https://github.com/isfopo/rig-meta.git
